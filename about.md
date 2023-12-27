@@ -6,4 +6,4 @@
 
 --------
 
-Program competitor|Kaggler|ICPCer
+Program competitor\|Kaggler\|ICPCer
