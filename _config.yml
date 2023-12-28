@@ -22,7 +22,7 @@ favicon:
 navigation:
   - name: 首页
     url: /
-  - name: 关于
+  - name: 关于我
     url: /about
 
 # Pagination

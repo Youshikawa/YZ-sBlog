@@ -16,4 +16,4 @@ Program competitor\|Kaggler\|ICPCer
 
 --------
 
-算法竞赛选手/｜ICPC 铜3 银1 /| Kaggle竞赛初学者 
+算法竞赛选手 \｜ICPC 铜3 银1 \| Kaggle竞赛初学者 
