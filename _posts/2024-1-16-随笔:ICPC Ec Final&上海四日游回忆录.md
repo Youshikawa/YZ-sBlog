@@ -10,7 +10,7 @@
 
 飞驰的高铁，转眼间，就到了上海虹桥火车站。
 
-[图片](http://resource.yzcode.top/2024-1-12-Shanghai/1121705321744_.pic.jpg)
+![](http://resource.yzcode.top/2024-1-12-Shanghai/1121705321744_.pic.jpg)
 
 虹桥火车站不愧为华东的地区交通枢纽，充斥着一股忙碌的气氛。
 
