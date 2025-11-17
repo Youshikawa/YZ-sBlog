@@ -3,9 +3,9 @@
 #
 
 # Name of your site (displayed in the header)
-name: "YZBlog"
+name: "Yukikawa's HP"
 # Short bio or description (displayed in the header) 
-description: "个人博客，随便写写，就当个云笔记用吧"
+description: "All articles are my own views." 
 
 #
 # Flags below are optional
@@ -20,9 +20,9 @@ favicon:
 # and URL Link(e.g. 'Theme' tab below) tabs. If you don't need one, just delete
 # it from the list(Delete '- name: ' and 'url: ', too!)
 navigation:
-  - name: 首页
+  - name: home
     url: /
-  - name: 关于我
+  - name: about me
     url: /about
 
 # Pagination
