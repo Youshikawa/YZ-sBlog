@@ -116,8 +116,11 @@ layout: default
 {% endif %}
 
 <div class="posts" id="post-list">
+
+  <!-- ① 先渲染含 settop 标签的置顶文章 -->
   {% for post in paginator.posts %}
   {% unless post.draft %}
+  {% if post.tags contains 'settop' %}
     <article class="post"
              data-tags="{{ post.tags | join:' ' }}"
              data-categories="{{ post.categories | join:' ' }}">
@@ -147,6 +150,44 @@ layout: default
 
       <a href="{{ site.baseurl }}{{ post.url }}" class="read-more">Read More</a>
     </article>
+  {% endif %}
+  {% endunless %}
+  {% endfor %}
+
+  <!-- ② 再渲染没有 settop 标签的普通文章 -->
+  {% for post in paginator.posts %}
+  {% unless post.draft %}
+  {% unless post.tags contains 'settop' %}
+    <article class="post"
+             data-tags="{{ post.tags | join:' ' }}"
+             data-categories="{{ post.categories | join:' ' }}">
+      <h1>
+        <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a>
+      </h1>
+
+      <div class="meta">
+        <span class="date">
+          {{ post.date | date: "%Y-%m-%d" }}
+        </span>
+
+        <ul class="tag">
+          {% for tag in post.tags %}
+          <li>
+            <a href="{{ site.url }}{{ site.baseurl }}/tags#{{ tag }}">
+              {{ tag }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="entry">
+        {{ post.excerpt | truncate: 200 }}
+      </div>
+
+      <a href="{{ site.baseurl }}{{ post.url }}" class="read-more">Read More</a>
+    </article>
+  {% endunless %}
   {% endunless %}
   {% endfor %}
 </div>
