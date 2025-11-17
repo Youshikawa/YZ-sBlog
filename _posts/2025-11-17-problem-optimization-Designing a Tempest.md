@@ -1,352 +1,199 @@
 ---
 layout: post
-title: "[Challenge] Logistics Routing with Port Congestiont"
-date: 2025-11-18
+title: "[Challenge]Designing a Tempest"
+date: 2025-11-17
 categories: [problem]
 tags: [optimization]
 ---
+## Problem: *Designing a Tempest*
 
-# \[Challenge] Logistics Routing with Port Congestion
+You live on an infinite 2D grid of square cells.
 
-## Background
+Each cell has a color: **black** or **white**.
 
-A logistics company must ship a large amount of cargo from Port A to Port B over several days.
-Unlike previous operations, the company now wants to account not only for transportation cost and route changes, but also for **congestion risk on ports**.
+Initially, all cells $(x, y)$ with
 
-You are asked to design a multi-day routing plan that keeps the **overall cost as low as possible**.
-This is a **challenge / scoring problem**: you are not required to find a provably optimal solution.
+$$
+0 \le x \le X - 1,\quad 0 \le y \le Y - 1
+$$
+
+are black, and all other cells are white.
+So the initial black region is a solid $X \times Y$ rectangle.
+
+You may design exactly $N$ *great storms*.
+Each storm transforms the entire grid according to parameters that you choose.
+
+Your goal is to choose these storms so that **after all $N$ storms**, the number of connected components of black cells is as large as possible.
+
+This is an optimization (heuristic) problem: there is no fixed “correct output”; instead, your solution is graded by how good its storms are.
 
 ---
 
-## 1. Problem Description
+## 1. Great storms
 
-* There are **$n$ days**.
-* There are **$m$ ports**, numbered $1, 2, \dots, m$.
-* Port A is port **1**, and Port B is port **$m$**.
-* There are **$e$** undirected shipping routes (edges). Each route connects two ports and has a positive integer length (distance).
-* On some days, certain ports are **closed** (unavailable). On such a day, your route is not allowed to pass through those ports.
-* On **each day** $t$ ($1 \le t \le n$), you must choose **one route (a path)** from port 1 to port $m$.
+You must define **exactly $N$** great storms.
 
-Your goal is to choose a valid path for each day so that the **total cost** (defined below) is as small as possible.
+The $i$-th storm is defined by a character $C_i$ and two integers $A_i, B_i$:
 
----
+* $C_i$ is either `'X'` or `'Y'`;
+* $A_i, B_i$ are integers satisfying
 
-## 2. Daily Path and Validity
+  $$
+  -1000 \le A_i, B_i \le 1000.
+  $$
 
-For each day $t$ ($1 \le t \le n$), you must choose a path
+### 1.1 Effect of one storm
 
-$$
-P_t = (v_{t,1}, v_{t,2}, \dots, v_{t,L_t})
-$$
+We describe the update in terms of **where the color comes from**.
 
-satisfying:
+Let the color *before* the $i$-th storm be given.
+After the storm, the color of each cell $(x, y)$ is taken from some cell *before* the storm, as follows.
 
-1. $v_{t,1} = 1$ and $v_{t,L_t} = m$ (start at port 1, end at port $m$);
-2. For every $1 \le i < L_t$, there is an undirected edge between $v_{t,i}$ and $v_{t,i+1}$ in the graph;
-3. Every port $v_{t,i}$ on the path must be **open** on day $t$ (not closed on that day);
-4. You may assume your path is simple (no repeated nodes), though this is not enforced by the statement.
+#### Case $C_i = \text{'X'}$
 
-Let the **length of the path** on day $t$ be
+* If $x < A_i$, then the new color of $(x, y)$ is the old color of $(x, y + B_i)$.
+* If $x \ge A_i$, then the new color of $(x, y)$ is the old color of $(x, y - B_i)$.
 
-$$
-len_t = \sum_{i=1}^{L_t - 1} w(v_{t,i}, v_{t,i+1})
-$$
+#### Case $C_i = \text{'Y'}$
 
-where $w(u, v)$ is the given length of edge $(u,v)$.
+* If $y < A_i$, then the new color of $(x, y)$ is the old color of $(x + B_i, y)$.
+* If $y \ge A_i$, then the new color of $(x, y)$ is the old color of $(x - B_i, y)$.
+
+This update is applied simultaneously to all cells on the infinite grid.
+
+It can be shown that this mapping is a bijection on cells, so **the number of black cells is always exactly $X \times Y$**.
 
 ---
 
-## 3. Cost Components
+## 2. Adjacency and connected components
 
-The total cost of your multi-day routing plan consists of **three parts**:
-
-1. Transportation distance cost
-2. Route change cost
-3. Port congestion cost
-
-Your objective is to minimize the **TotalCost**, defined below.
-
-### 3.1 Transportation Distance Cost
-
-This is simply the sum of daily path lengths:
+Two black cells $(x_1, y_1)$ and $(x_2, y_2)$ are **adjacent** if and only if
 
 $$
-Cost_{\text{dist}} = \sum_{t=1}^n len_t
+|x_1 - x_2| + |y_1 - y_2| = 1
 $$
 
-### 3.2 Route Change Cost
+(that is, they share a side).
 
-We assume that on day 1, the system selects an initial route; this **does not** count as a change.
+A black cell can move to another black cell by repeatedly moving to adjacent black cells.
 
-For each day $t \ge 2$, if the path on day $t$ is **different** from the path on day $t-1$, we count **one route change**.
+Two black cells are **connected** if and only if one can move from one to the other by such moves.
 
-Formally:
+A non-empty set $S$ of black cells is a **connected component** if:
 
-* Let $chg$ be the number of days $t$ ($2 \le t \le n$) such that $P_t \neq P_{t-1}$.
-* Here, $P_t \neq P_{t-1}$ means the sequences of vertices in the two paths are not exactly the same.
+* Any two cells in $S$ are connected;
+* No black cell outside $S$ is connected to any cell in $S$.
 
-You are given an integer parameter $k$, the cost of changing the route once. Then:
-
-$$
-Cost_{\text{change}} = k \cdot chg
-$$
-
-### 3.3 Port Congestion Cost (Key Novel Part)
-
-For each port $p$ ($1 \le p \le m$), define its **usage count** over all days:
+After all $N$ storms have been applied, suppose the black cells form $K$ connected components.
+Let the size of the $j$-th component (number of cells in it) be $s_j$. Then
 
 $$
-use_p = 
-\big|\{ t \in \{1,\dots,n\} \mid p \text{ appears somewhere in path } P_t \}\big|
+\sum_{j=1}^{K} s_j = X \times Y.
 $$
-
-That is, the number of days on which your route passes through port $p$.
-
-You are given a parameter $\lambda$.
-The **port congestion cost** is defined as:
-
-$$
-Cost_{\text{cong}} = \lambda \cdot \sum_{p=1}^m use_p^2
-$$
-
-Intuition:
-
-* If a port is used on only a few days, $use_p$ is small, so its squared penalty is small.
-* If a port is heavily used across many days, $use_p^2$ becomes large, significantly increasing the cost.
-* This encourages you to **distribute traffic** across different ports, rather than overloading a few.
 
 ---
 
-## 4. Total Cost (Objective Function)
+## 3. Objective and scoring
 
-Combining the three parts:
+For each test case, your **objective** is to maximize $K$, the number of connected components of black cells after all storms.
 
-$$
-\boxed{
-TotalCost = Cost_{\text{dist}} 
-           + Cost_{\text{change}} 
-           + Cost_{\text{cong}}
-}
-$$
+### 3.1 Score for one test
 
-That is,
+For a single test case with parameters $(N, X, Y)$, after simulating your $N$ storms and computing $K$, the score is
 
 $$
-\boxed{
-TotalCost = 
-\left(\sum_{t=1}^n len_t\right)
-+ k \cdot chg
-+ \lambda \cdot \sum_{p=1}^m use_p^2
-}
+\text{score} = 10^6 \times \frac{K}{X \times Y}.
 $$
 
-Your task is to choose valid paths $P_1, P_2, \dots, P_n$ to **minimize** this TotalCost.
+* If all black cells remain in a single component ($K = 1$), the score is about $10^6 / (X Y)$, very small.
+* If every black cell is isolated ($K = X Y$), the score is exactly $10^6$, which is the theoretical maximum for that test.
 
-> Note: This is a **challenge / scoring problem**.
-> The judge computes your TotalCost based on your output, and lower is better.
-> You are not required to find a provably optimal solution.
+### 3.2 Final contest score
+
+The input contains multiple test cases.
+Your **final score** is the arithmetic mean of the scores over all test cases, rounded down to an integer.
+
+Higher is better.
 
 ---
 
-## 5. Input Format
+## 4. Input and output format
 
-Input is given via standard input in the following format:
+### 4.1 Input
 
-1. First line: five integers
+The judge gives your program:
 
-   $$
-   n,\ m,\ k,\ \lambda,\ e
-   $$
+* First line: an integer $T$ — the number of test cases.
+* Then for each test case:
 
-   where:
+  * One line with three integers: $N, X, Y$.
 
-   * $n$: number of days;
-   * $m$: number of ports (port 1 is A, port $m$ is B);
-   * $k$: route change cost;
-   * $\lambda$: congestion cost parameter;
-   * $e$: number of shipping routes (edges).
+Example (single test):
 
-2. Next $e$ lines: each contains three integers
+```text
+1
+3 5 7
+```
 
-   $$
-   u,\ v,\ w
-   $$
+#### Constraints (example setting)
 
-   meaning there is an undirected route between port $u$ and port $v$ with length $w$.
+These are example limits suitable for a heuristic contest; they can be tuned by the contest organizers:
 
-3. Next line: one integer $d$, the number of “port closed” intervals.
+* $1 \le T \le 50$
+* $1 \le N \le 30$
+* $5 \le X, Y \le 50$
 
-4. Next $d$ lines: each contains three integers
+### 4.2 Output
 
-   $$
-   p,\ a,\ b
-   $$
+For **each** test case, you must print exactly $N$ lines.
 
-   meaning port $p$ is **closed** (unavailable) on days from $a$ to $b$ (inclusive), i.e.,
-   on all days $t$ with $a \le t \le b$, path $P_t$ may **not** use port $p$.
+The $i$-th line should contain:
 
-You may assume that:
-
-* For every day $t$ ($1 \le t \le n$), there exists **at least one valid path** from port 1 to port $m$ using only ports that are open on day $t$.
-
----
-
-## 6. Output Format 
-
-You must output a **complete routing plan**, i.e., one valid path per day.
-
-Output exactly **$n$ lines**.
-On the $t$-th line, describe the path $P_t$ for day $t$ as:
-
-$$
-L_t\ v_{t,1}\ v_{t,2}\ \dots\ v_{t,L_t}
-$$
+```text
+C_i A_i B_i
+```
 
 where:
 
-* $L_t$ is the number of vertices in the path on day $t$;
-* You must satisfy:
+* `C_i` is `X` or `Y`;
+* `A_i` and `B_i` are integers with $-1000 \le A_i, B_i \le 1000$.
 
-  * $v_{t,1} = 1$ and $v_{t,L_t} = m$;
-  * For all $1 \le i < L_t$, there is an edge between $v_{t,i}$ and $v_{t,i+1}$;
-  * For every vertex $v_{t,i}$, port $v_{t,i}$ must be open on day $t$ (not within a closed interval for that port).
-
-The judge will:
-
-1. Verify that each daily path is valid.
-2. Compute:
-
-   * Each $len_t$,
-   * The number of route changes $chg$,
-   * Each $use_p$,
-   * Then calculate your TotalCost.
-
-If your output format is invalid, or any path is invalid for its day (disconnected, wrong endpoints, uses closed ports, etc.), the score for that test may be 0 (exact behavior depends on the contest system).
-
----
-
-## 7. Scoring 
-
-
-* For each test file $i$:
-
-  * If your solution is invalid, you get **0** for that test.
-  * Otherwise, the judge computes your $TotalCost_i$.
-* Let $Baseline_i$ be the smallest TotalCost among all contestants (and official solutions) on test $i$.
-* Your score on test $i$ may be defined as, for example:
-
-$$
-Score_i = 100000 \times \frac{Baseline_i}{TotalCost_i}
-$$
-
-* Your final score is the average (or weighted sum) of all $Score_i$.
-
-The exact normalization formula may be different; the **objective function** and **validity rules** are as specified above.
-
----
-
-## 8.Constraints
-
-
-* $1 \le n \le 200$
-* $2 \le m \le 50$
-* $1 \le e \le 400$
-* $1 \le k, \lambda \le 10^4$
-* $1 \le w \le 10^4$
-* $1 \le d \le 2000$
-* For every day $t$, there exists at least one valid path from 1 to $m$.
-
----
-
-## 9. Sample (Illustrative Only)
-
-This is a **very small** example, only to illustrate input and output formats.
-The sample output is **not guaranteed optimal**.
-
-### Sample Input
+Example output for the sample input above:
 
 ```text
-3 4 5 2 4
-1 2 1
-2 4 1
-1 3 2
-3 4 2
-2
-2 2 2
-3 3 3
+X 0 1
+Y 2 -1
+X 1 2
 ```
 
-Explanation:
+There is no blank line between test cases.
 
-* 3 days, 4 ports (1 is start, 4 is end).
-* Route change cost $k = 5$, congestion parameter $\lambda = 2$.
-* Edges:
+If you want a storm that has little effect, you may choose parameters that roughly “cancel out” (for example, $B_i = 0$, or an $A_i$ far away from the current black region).
 
-  * 1–2 with length 1
-  * 2–4 with length 1
-  * 1–3 with length 2
-  * 3–4 with length 2
-* Closed intervals:
+---
 
-  * Port 2 is closed on day 2;
-  * Port 3 is closed on day 3.
+## 5. Implementation notes for the judge (informal)
 
-Possible valid paths:
+(This is for clarity; participants don’t need to implement the judge.)
 
-* Day 1: can use 1–2–4 or 1–3–4
-* Day 2: port 2 is closed → must use 1–3–4
-* Day 3: port 3 is closed → must use 1–2–4
+For each test case:
 
-### Sample Output (valid but not necessarily optimal)
+1. Represent the black region as a union of axis-aligned rectangles.
+   Initially, it is a single rectangle $[0, X-1] \times [0, Y-1]$.
 
-```text
-3 1 2 4
-3 1 3 4
-3 1 2 4
-```
+2. For each storm $(C_i, A_i, B_i)$:
 
-Explanation:
+   * For each current rectangle, cut it by the line $x = A_i$ (if $C_i = X$) or $y = A_i$ (if $C_i = Y$),
+     obtaining at most two rectangles;
+   * Translate each side up/down or left/right according to the rules above;
+   * Collect all resulting rectangles.
 
-* Day 1: path 1-2-4, length $1 + 1 = 2$
-* Day 2: path 1-3-4, length $2 + 2 = 4$
-* Day 3: path 1-2-4, length $1 + 1 = 2$
+   It can be shown that after each storm the region is still a union of rectangles, and the number of rectangles stays manageable for the given bounds.
 
-1. Distance cost:
+3. After all storms, build a graph whose nodes are rectangles;
+   connect two nodes if their rectangles contain at least one pair of adjacent cells.
+   The connected components of this graph correspond exactly to connected components of the black cells.
 
-   $$
-   Cost_{\text{dist}} = 2 + 4 + 2 = 8
-   $$
-
-2. Route change cost:
-
-   * Day 1 vs Day 2: different → 1 change
-   * Day 2 vs Day 3: different → 1 change
-   * Total $chg = 2$
-
-   $$
-   Cost_{\text{change}} = 5 \times 2 = 10
-   $$
-
-3. Congestion cost:
-
-   * Port 1: used on all 3 days → $use_1 = 3$
-   * Port 2: used on days 1 and 3 → $use_2 = 2$
-   * Port 3: used on day 2 → $use_3 = 1$
-   * Port 4: used on all 3 days → $use_4 = 3$
-
-   $$
-   \sum use_p^2 = 3^2 + 2^2 + 1^2 + 3^2 = 9 + 4 + 1 + 9 = 23
-   $$
-
-   $$
-   Cost_{\text{cong}} = \lambda \cdot 23 = 2 \times 23 = 46
-   $$
-
-4. Total cost:
-
-   $$
-   TotalCost = 8 + 10 + 46 = 64
-   $$
-
-The judge would use this TotalCost value during scoring.
+4. The size of a component is the sum of areas of rectangles in it.
+   Count components and compute the score.
 

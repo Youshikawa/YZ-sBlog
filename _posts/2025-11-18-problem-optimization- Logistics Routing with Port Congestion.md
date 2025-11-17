@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "[Challenge] Logistics Routing with Port Congestiont"
-date: 2025-11-18
+date: 2025-11-17
 categories: [problem]
 tags: [optimization]
 ---
