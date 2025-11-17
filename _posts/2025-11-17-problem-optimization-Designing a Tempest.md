@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Designing a Tempest"
+title: "[Challenge]Designing a Tempest"
 date: 2025-11-17
 categories: [problem]
 tags: [optimization]
