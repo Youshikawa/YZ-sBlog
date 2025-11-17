@@ -14,7 +14,7 @@ layout: default
   box-sizing: border-box;
 ">
   <div style="font-weight: bold; font-size: 16px; color: #333; margin-bottom: 8px;">
-    筛选文章
+    What do you want to read today?
   </div>
 
   <div style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -32,7 +32,7 @@ layout: default
       box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
       box-sizing: border-box;
     ">
-      <option value="">全部分类</option>
+      <option value="">All categories</option>
       {% for category in site.categories %}
         {% assign cat_name = category[0] %}
         <option value="{{ cat_name }}">{{ cat_name }}</option>
@@ -53,7 +53,7 @@ layout: default
       box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
       box-sizing: border-box;
     ">
-      <option value="">全部标签</option>
+      <option value="">All tags</option>
       {% for tag in site.tags %}
         {% assign tag_name = tag[0] %}
         <option value="{{ tag_name }}">{{ tag_name }}</option>
