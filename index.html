@@ -1,6 +1,83 @@
 ---
 layout: default
 ---
+
+<!-- 顶部筛选菜单栏 -->
+<div class="filter-container" style="
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 8px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+">
+  <div style="font-weight: bold; font-size: 16px; color: #333; margin-bottom: 8px;">
+    筛选文章
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+    <!-- 分类筛选 -->
+    <select id="category-filter" style="
+      min-width: 160px;
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 16px;
+      border: 1px solid #c0c0c0;
+      background-color: rgba(227,231,236,.2);
+      color: #333;
+      font-size: 14px;
+      outline: none;
+      box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+      box-sizing: border-box;
+    ">
+      <option value="">全部分类</option>
+      {% for category in site.categories %}
+        {% assign cat_name = category[0] %}
+        <option value="{{ cat_name }}">{{ cat_name }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- 标签筛选 -->
+    <select id="tag-filter" style="
+      min-width: 160px;
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 16px;
+      border: 1px solid #c0c0c0;
+      background-color: rgba(227,231,236,.2);
+      color: #333;
+      font-size: 14px;
+      outline: none;
+      box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+      box-sizing: border-box;
+    ">
+      <option value="">全部标签</option>
+      {% for tag in site.tags %}
+        {% assign tag_name = tag[0] %}
+        <option value="{{ tag_name }}">{{ tag_name }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- 重置按钮 -->
+    <button id="filter-reset" style="
+      height: 32px;
+      padding: 0 16px;
+      border-radius: 16px;
+      border: 1px solid #c0c0c0;
+      background-color: #fff;
+      color: #333;
+      font-size: 14px;
+      cursor: pointer;
+      box-sizing: border-box;
+    ">
+      重置
+    </button>
+  </div>
+</div>
+
+<!-- 搜索框 -->
 <div class="search-container">
   <input type="text" id="search-input" placeholder="search blog posts..." style="width: 90%;
     height: 35px;
@@ -22,31 +99,33 @@ layout: default
 <script src="{{ site.baseurl }}/js/simple-jekyll-search.min.js"></script>
 
 <script>
-	window.simpleJekyllSearch = new SimpleJekyllSearch({
-	searchInput: document.getElementById('search-input'),
-	resultsContainer: document.getElementById('results-container'),
-	json: '{{ site.baseurl }}/search.json',
-	searchResultTemplate: '<li><a href="{url}?query={query}" title="{desc}">{title}</a></li>',
-	noResultsText: 'No results found',
-	limit: 10,
-	fuzzy: false,
-	exclude: ['Welcome']
+  window.simpleJekyllSearch = new SimpleJekyllSearch({
+    searchInput: document.getElementById('search-input'),
+    resultsContainer: document.getElementById('results-container'),
+    json: '{{ site.baseurl }}/search.json',
+    searchResultTemplate: '<li><a href="{url}?query={query}" title="{desc}">{title}</a></li>',
+    noResultsText: 'No results found',
+    limit: 10,
+    fuzzy: false,
+    exclude: ['Welcome']
   })
 </script>
- 
+
 {% if site.posts.size == 0 %}
   <h2>No post found</h2>
 {% endif %}
 
-<div class="posts">
+<div class="posts" id="post-list">
   {% for post in paginator.posts %}
   {% unless post.draft %}
-    <article class="post">
+    <article class="post"
+             data-tags="{{ post.tags | join:' ' }}"
+             data-categories="{{ post.categories | join:' ' }}">
       <h1>
         <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a>
       </h1>
 
-      <div clsss="meta">
+      <div class="meta">
         <span class="date">
           {{ post.date | date: "%Y-%m-%d" }}
         </span>
@@ -102,3 +181,49 @@ layout: default
 		User:<span id="busuanzi_value_site_uv" style="font-family:Consolas;color:Silver;font-size:12px;"></span>
 	</span>
 </div>
+
+<!-- 前端过滤脚本：按 category / tag 隐藏或显示文章 -->
+<script>
+  (function() {
+    var categorySelect = document.getElementById('category-filter');
+    var tagSelect = document.getElementById('tag-filter');
+    var resetBtn = document.getElementById('filter-reset');
+    var posts = document.querySelectorAll('#post-list article.post');
+
+    function normalize(str) {
+      return (str || '').toString().trim();
+    }
+
+    function filterPosts() {
+      var selectedCategory = normalize(categorySelect.value);
+      var selectedTag = normalize(tagSelect.value);
+
+      posts.forEach(function(post) {
+        var postCategories = normalize(post.getAttribute('data-categories')).split(' ');
+        var postTags = normalize(post.getAttribute('data-tags')).split(' ');
+
+        var matchCategory = !selectedCategory || postCategories.indexOf(selectedCategory) !== -1;
+        var matchTag = !selectedTag || postTags.indexOf(selectedTag) !== -1;
+
+        if (matchCategory && matchTag) {
+          post.style.display = '';
+        } else {
+          post.style.display = 'none';
+        }
+      });
+    }
+
+    if (categorySelect && tagSelect) {
+      categorySelect.addEventListener('change', filterPosts);
+      tagSelect.addEventListener('change', filterPosts);
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function() {
+        categorySelect.value = '';
+        tagSelect.value = '';
+        filterPosts();
+      });
+    }
+  })();
+</script>
